@@ -17,15 +17,29 @@ typedef struct {
     float dx, dy;
     SDL_Color color;
     int radio;
-    bool lleno;
 } Circle;
+
+bool circlesOverlap(Circle c1, Circle c2){
+    float distance = sqrt(pow(c2.x - c1.x, 2) + pow(c2.y - c1.y, 2));
+    if (distance < c1.radio + c2.radio) return true;
+    return false;
+}
+
+SDL_Color mixColors(SDL_Color c1, SDL_Color c2) {
+    return (SDL_Color){
+        (c1.r + c2.r) / 2,
+        (c1.g + c2.g) / 2,
+        (c1.b + c2.b) / 2,
+        (c1.a + c2.a) / 2
+    };
+}
 
 void moveCircle(Circle *circle) {
     circle->x += circle->dx;
     circle->y += circle->dy;
 
     if (circle->x - circle->radio <= 0 || circle->x + circle->radio >= WIDTH || circle->y - circle->radio <= 0 || circle->y + circle->radio >= HEIGHT) {
-        circle->lleno = !circle->lleno; // Invertimos el estado de relleno al chocar con una pared
+        circle->color = (SDL_Color){rand() % 256, rand() % 256, rand() % 256, 255};
     }
 
     if (circle->x - circle->radio <= 0 || circle->x + circle->radio >= WIDTH) circle->dx = -circle->dx;
@@ -38,22 +52,13 @@ void drawCircle(SDL_Renderer* renderer, Circle circle) {
     int y_center = circle.y;
     int r = circle.radio;
 
-    if (circle.lleno) {
-        for (int w = 0; w < r * 2; w++) {
-            for (int h = 0; h < r * 2; h++) {
-                int dx = r - w;
-                int dy = r - h;
-                if ((dx * dx + dy * dy) <= (r * r)) {
-                    SDL_RenderDrawPoint(renderer, x_center + dx, y_center + dy);
-                }
+    for (int w = 0; w < r* 2; w++){
+        for (int h = 0; h < r*2; h++){
+            int dx = r - w; // horizontal offset
+            int dy = r - h; // vertical offset
+            if ((dx*dx + dy*dy) <= (r*r)) {
+                SDL_RenderDrawPoint(renderer, x_center + dx, y_center + dy);
             }
-        }
-    } else {
-        for (int w = -r; w < r; w++) {
-            int height = (int)sqrt(r * r - w * w);
-
-            SDL_RenderDrawPoint(renderer, x_center + w, y_center - height);
-            SDL_RenderDrawPoint(renderer, x_center + w, y_center + height);
         }
     }
 }
@@ -85,8 +90,7 @@ int main(int argc, char* argv[]) {
             (rand() % 5 + 1) * (rand() % 2 ? 1 : -1),
             (rand() % 5 + 1) * (rand() % 2 ? 1 : -1),
             {rand() % 256, rand() % 256, rand() % 256, 255},
-            rand() % 50 + 10,
-            false
+            rand() % 50 + 10
         };
     }
 
@@ -104,6 +108,15 @@ int main(int argc, char* argv[]) {
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+
+        for(int i = 0; i < n; i++) {
+            for(int j = i + 1; j < n; j++) {
+                if (circlesOverlap(circles[i], circles[j])) {
+                    circles[i].color = (SDL_Color){rand() % 256, rand() % 256, rand() % 256, 255};
+                    circles[j].color = (SDL_Color){rand() % 256, rand() % 256, rand() % 256, 255};
+                }
+            }
+        }
 
         for (int i = 0; i < n; i++) {
             SDL_SetRenderDrawColor(renderer, circles[i].color.r, circles[i].color.g, circles[i].color.b, circles[i].color.a);
