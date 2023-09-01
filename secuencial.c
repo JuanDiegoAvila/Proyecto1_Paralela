@@ -1,5 +1,5 @@
 // Manuel Archila - 161250
-// Diego Franco - 20240
+// Diego Franco - 20240 
 // Juan Diego Avila - 20090
 
 #include <stdio.h>
@@ -25,6 +25,14 @@ void moveCircle(Circle *circle) {
 
     if (circle->x - circle->radio <= 0 || circle->x + circle->radio >= WIDTH) circle->dx = -circle->dx;
     if (circle->y - circle->radio <= 0 || circle->y + circle->radio >= HEIGHT) circle->dy = -circle->dy;
+}
+
+// Comprobar si dos círculos se superponen
+bool checkOverlap(Circle c1, Circle c2) {
+    float dx = c1.x - c2.x;
+    float dy = c1.y - c2.y;
+    float distance = sqrt(dx * dx + dy * dy);
+    return distance < (c1.radio + c2.radio);
 }
 
 void drawCircle(SDL_Renderer* renderer, Circle circle) {
@@ -54,10 +62,10 @@ void fillCircle(SDL_Renderer* renderer, int x_center, int y_center, int r) {
         }
     }
 }
-
+// Funcion que dibuja una cara sonriente
 void drawSmileyFace(SDL_Renderer* renderer, Circle circle) {
     drawCircle(renderer, circle);
-
+    
     int eyeRadius = circle.radio / 8;
     int eyeX1 = circle.x - circle.radio / 3;
     int eyeY1 = circle.y - circle.radio / 3;
@@ -101,8 +109,12 @@ int main(int argc, char* argv[]) {
     }
 
     bool running = true;
+    Uint32 startTime;
+    int frameCount = 0;
 
     while (running) {
+        startTime = SDL_GetTicks();
+
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT) running = false;
@@ -112,12 +124,35 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            if (checkOverlap(circles[i], circles[j])) {
+                // Cambio de color y ajuste de direcciones para el rebote
+                circles[i].color = (SDL_Color){rand() % 256, rand() % 256, rand() % 256, 255};
+                circles[j].color = (SDL_Color){rand() % 256, rand() % 256, rand() % 256, 255};
+
+                // Intercambiar direcciones (esto es un modelo muy simple de "rebote")
+                float temp_dx = circles[i].dx;
+                float temp_dy = circles[i].dy;
+                circles[i].dx = circles[j].dx;
+                circles[i].dy = circles[j].dy;
+                circles[j].dx = temp_dx;
+                circles[j].dy = temp_dy;
+            }
+        }
+    }
+
+        for (int i = 0; i < n; i++) {
             SDL_SetRenderDrawColor(renderer, circles[i].color.r, circles[i].color.g, circles[i].color.b, circles[i].color.a);
-            drawSmileyFace(renderer, circles[i]);  // Cambio aquí
+            drawSmileyFace(renderer, circles[i]);  // Dibujo de caras sonrientes
             moveCircle(&circles[i]);
         }
 
         SDL_RenderPresent(renderer);
+
+        frameCount++;
+        if (frameCount % 30 == 0) {
+            printf("FPS: %f\n", 30.0 * 1000 / (SDL_GetTicks() - startTime + 1));
+        }
     }
 
     SDL_DestroyRenderer(renderer);
