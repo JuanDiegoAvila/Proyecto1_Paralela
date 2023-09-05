@@ -7,6 +7,7 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
 #include <math.h>
+#include <omp.h>
 #include <time.h>
 
 #define WIDTH 800
@@ -81,7 +82,6 @@ void fillCircle(SDL_Renderer* renderer, int x_center, int y_center, int r) {
         }
     }
 }
-
 // Funcion que dibuja una cara sonriente
 void drawSmileyFace(SDL_Renderer* renderer, Circle circle) {
     drawCircle(renderer, circle);
@@ -104,7 +104,7 @@ void drawSmileyFace(SDL_Renderer* renderer, Circle circle) {
     }
 }
 
-// Funcion que verifica si el que se va crear va a caer se traslapa con otros circulos que hay en pantalla 
+// Funcion 
 bool overlapsWithAny(Circle newCircle, Circle circles[], int count) {
     for (int i = 0; i < count; i++) {
         if (checkOverlap(newCircle, circles[i])) {
@@ -131,6 +131,8 @@ int main(int argc, char* argv[]) {
 
     Circle circles[n];
     srand(time(NULL));
+    
+    #pragma omp parallel for
     for (int i = 0; i < n; i++) {
         circles[i] = (Circle){
             rand() % WIDTH, rand() % HEIGHT,
