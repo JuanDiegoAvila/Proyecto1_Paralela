@@ -109,7 +109,8 @@ int main(int argc, char* argv[]) {
     }
 
     bool running = true;
-    Uint32 startTime;
+    Uint32 startTime = SDL_GetTicks();
+    Uint32 lastTime = startTime;
     int frameCount = 0;
 
     while (running) {
@@ -151,7 +152,9 @@ int main(int argc, char* argv[]) {
 
         frameCount++;
         if (frameCount % 30 == 0) {
-            printf("FPS: %f\n", 30.0 * 1000 / (SDL_GetTicks() - startTime + 1));
+            Uint32 currentTime = SDL_GetTicks();
+            double timeDiff = (currentTime - lastTime);
+            printf("FPS: %f\n", 30.0/ (timeDiff / 1000.0));
         }
     }
 
