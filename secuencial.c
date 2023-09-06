@@ -147,6 +147,7 @@ int main(int argc, char* argv[]) {
     int frameCount = 0;
     bool todos = false;
     int circulos = 0;
+    Uint32 inicio = SDL_GetTicks();
 
     while (!todos) { // Cuando estan todos renderizados termina
         startTime = SDL_GetTicks();
@@ -232,8 +233,18 @@ int main(int argc, char* argv[]) {
         SDL_RenderPresent(renderer);
 
         frameCount++; // se calculan los frames actuales.
-        if (frameCount % 30 == 0) {
-            printf("FPS: %f\n", 30.0 / (timeDiff / 1000.0));
+        Uint32 currentTime = SDL_GetTicks();
+        Uint32 deltaTime = currentTime - inicio;
+
+        //printf("deltaTime: %d\n", deltaTime);
+        // Si ha pasado 1 segundo, calcula los FPS
+        if (deltaTime >= 1000) {
+            float fps = frameCount / (deltaTime / 1000.0f);
+            printf("FPS: %.2f\n", fps);
+
+            // Reinicia las variables
+            inicio = currentTime;
+            frameCount = 0;
         }
     }
 
