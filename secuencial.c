@@ -48,8 +48,8 @@ void moveCircle(Circle *circle) {
 bool checkOverlap(Circle c1, Circle c2) {
     float dx = c1.x - c2.x;
     float dy = c1.y - c2.y;
-    float distance = sqrt(dx * dx + dy * dy);
-    return distance < (c1.radio + c2.radio); // Si la distancia es menor el tamaño de los dos círculos.
+    float distance_squared = dx * dx + dy * dy;
+    return distance_squared < ((c1.radio + c2.radio) * (c1.radio + c2.radio));
 }
 
 // Funcion para dibujar los circulos
@@ -58,33 +58,67 @@ void drawCircle(SDL_Renderer* renderer, Circle circle) {
     int y_center = circle.y;
     int r = circle.radio;
 
-    for (int w = 0; w < r* 2; w++){
-        for (int h = 0; h < r*2; h++){
-            int dx = r - w; // horizontal offset
-            int dy = r - h; // vertical offset
-            if ((dx*dx + dy*dy) <= (r*r)) {
-                SDL_RenderDrawPoint(renderer, x_center + dx, y_center + dy); // Dibujar cada pixel
-            }
+     int x = 0, y = r;
+    int d = 3 - 2 * r;  // Valor inicial de la decisión
+
+    // Dibuja los puntos iniciales para el primer octavo
+    SDL_RenderDrawPoint(renderer, x_center + x, y_center - y);
+    SDL_RenderDrawPoint(renderer, x_center - x, y_center - y);
+    SDL_RenderDrawPoint(renderer, x_center + x, y_center + y);
+    SDL_RenderDrawPoint(renderer, x_center - x, y_center + y);
+
+    while (y >= x) {
+        // Incrementa x
+        x++;
+
+        // Actualiza d
+        if (d > 0) {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        } else {
+            d = d + 4 * x + 6;
         }
+
+        // Dibuja los puntos para cada octavo
+        SDL_RenderDrawPoint(renderer, x_center + x, y_center - y);
+        SDL_RenderDrawPoint(renderer, x_center - x, y_center - y);
+        SDL_RenderDrawPoint(renderer, x_center + x, y_center + y);
+        SDL_RenderDrawPoint(renderer, x_center - x, y_center + y);
+        SDL_RenderDrawPoint(renderer, x_center + y, y_center - x);
+        SDL_RenderDrawPoint(renderer, x_center - y, y_center - x);
+        SDL_RenderDrawPoint(renderer, x_center + y, y_center + x);
+        SDL_RenderDrawPoint(renderer, x_center - y, y_center + x);
     }
 }
 
 // Funcion para llenar de un color los circulos
 void fillCircle(SDL_Renderer* renderer, int x_center, int y_center, int r) {
-    for (int w = 0; w < r * 2; w++) {
-        for (int h = 0; h < r * 2; h++) {
-            int dx = r - w; // horizontal offset
-            int dy = r - h; // vertical offset
-            if ((dx * dx + dy * dy) <= (r * r)) {
-                SDL_RenderDrawPoint(renderer, x_center + dx, y_center + dy); // Dibujar cada pixel
-            }
+    int x = 0, y = r;
+    int d = 3 - 2 * r;
+
+    while (y >= x) {
+        // Dibuja líneas verticales para llenar el círculo
+        SDL_RenderDrawLine(renderer, x_center - x, y_center - y, x_center - x, y_center + y);
+        SDL_RenderDrawLine(renderer, x_center + x, y_center - y, x_center + x, y_center + y);
+        SDL_RenderDrawLine(renderer, x_center - y, y_center - x, x_center - y, y_center + x);
+        SDL_RenderDrawLine(renderer, x_center + y, y_center - x, x_center + y, y_center + x);
+
+        x++;
+
+        if (d > 0) {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        } else {
+            d = d + 4 * x + 6;
         }
     }
 }
 
 // Funcion que dibuja una cara sonriente
 void drawSmileyFace(SDL_Renderer* renderer, Circle circle) {
-    drawCircle(renderer, circle); // Manda a dibujar el circulo completo
+    SDL_SetRenderDrawColor(renderer, circle.color.r, circle.color.g, circle.color.b, circle.color.a);
+    fillCircle(renderer, circle.x, circle.y, circle.radio); // <-- Esto rellena el círculo grande
+    drawCircle(renderer, circle); // Manda a dibujar el círculo completo
     
     int eyeRadius = circle.radio / 8;
     int eyeX1 = circle.x - circle.radio / 3;
@@ -96,7 +130,6 @@ void drawSmileyFace(SDL_Renderer* renderer, Circle circle) {
     fillCircle(renderer, eyeX1, eyeY1, eyeRadius); // Pinta los dos ojos 
     fillCircle(renderer, eyeX2, eyeY2, eyeRadius);
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     for (int i = -circle.radio / 3; i < circle.radio / 3; i++) { // Pintar la sonrisa
         int x = circle.x + i;
         int y = circle.y + circle.radio / 4 + sqrt(pow(circle.radio / 3, 2) - pow(i, 2)) / 2;
